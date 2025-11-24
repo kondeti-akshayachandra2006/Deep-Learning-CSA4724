@@ -1,0 +1,38 @@
+import tensorflow as tf
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+# Load CIFAR-10
+(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+
+# Select only 2 classes: airplane(0) and automobile(1)
+train_filter = (y_train == 0) | (y_train == 1)
+test_filter  = (y_test == 0)  | (y_test == 1)
+
+X_train, y_train = X_train[train_filter.squeeze()], y_train[train_filter]
+X_test, y_test = X_test[test_filter.squeeze()], y_test[test_filter]
+
+# Normalize
+X_train, X_test = X_train/255.0, X_test/255.0
+
+# Convert labels (0 or 1) into 2-class softmax one-hot
+y_train = tf.keras.utils.to_categorical(y_train, 2)
+y_test  = tf.keras.utils.to_categorical(y_test, 2)
+
+# CNN Model
+model = Sequential([
+    Conv2D(32, (3,3), activation='relu', input_shape=(32,32,3)),
+    MaxPooling2D(2,2),
+    Conv2D(64, (3,3), activation='relu'),
+    MaxPooling2D(2,2),
+    Flatten(),
+    Dense(128, activation='relu'),
+    Dense(2, activation='softmax')   # Softmax for binary classification
+])
+
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.fit(X_train, y_train, epochs=5, batch_size=64, validation_split=0.2)
+
+score = model.evaluate(X_test, y_test)
+print("Test accuracy:", score[1])
