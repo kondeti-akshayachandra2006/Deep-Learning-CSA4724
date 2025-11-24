@@ -1,0 +1,38 @@
+import numpy as np
+from sklearn.model_selection import GridSearchCV
+from sklearn.neural_network import MLPClassifier
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+
+# Load dataset
+data = load_iris()
+X = data.data
+y = data.target
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Define the model
+mlp = MLPClassifier(max_iter=1000)
+
+# Define hyperparameters to tune
+param_grid = {
+    'hidden_layer_sizes': [(10,), (20,), (30,)],
+    'activation': ['tanh', 'relu'],
+    'solver': ['sgd', 'adam'],
+    'alpha': [0.0001, 0.001, 0.01],
+    'learning_rate': ['constant', 'adaptive']
+}
+
+# Implement GridSearchCV
+grid_search = GridSearchCV(mlp, param_grid, n_jobs=-1, cv=5)
+grid_search.fit(X_train, y_train)
+
+# Best parameters and score
+print("Best parameters found: ", grid_search.best_params_)
+print("Best cross-validation score: ", grid_search.best_score_)
+
+# Evaluate on test set
+best_model = grid_search.best_estimator_
+test_score = best_model.score(X_test, y_test)
+print("Test set score: ", test_score)
