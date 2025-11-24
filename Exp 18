@@ -1,0 +1,55 @@
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.optimizers import Adam, SGD, RMSprop
+from tensorflow.keras.datasets import mnist
+
+# Load & preprocess MNIST
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+X_train = X_train.reshape(-1,28,28,1)/255.0
+X_test = X_test.reshape(-1,28,28,1)/255.0
+
+y_train = tf.keras.utils.to_categorical(y_train, 10)
+y_test  = tf.keras.utils.to_categorical(y_test, 10)
+
+optimizers = {
+    "adam": Adam,
+    "sgd": SGD,
+    "rmsprop": RMSprop
+}
+
+batch_sizes = [32, 64]
+activations = ["relu", "tanh"]
+learning_rates = [0.001, 0.0001]
+
+# Testing multiple combinations
+for batch in batch_sizes:
+    for act in activations:
+        for opt_name, opt_func in optimizers.items():
+            for lr in learning_rates:
+
+                print(f"\nTraining with batch={batch}, activation={act}, optimizer={opt_name}, lr={lr}")
+
+                model = Sequential([
+                    Conv2D(32, (3,3), activation=act, input_shape=(28,28,1)),
+                    MaxPooling2D(2,2),
+                    Conv2D(64, (3,3), activation=act),
+                    MaxPooling2D(2,2),
+                    Flatten(),
+                    Dense(64, activation=act),
+                    Dense(10, activation="softmax")
+                ])
+
+                optimizer = opt_func(learning_rate=lr)
+
+                model.compile(optimizer=optimizer, 
+                              loss="categorical_crossentropy", 
+                              metrics=["accuracy"])
+
+                model.fit(X_train, y_train, 
+                          epochs=2, 
+                          batch_size=batch, 
+                          verbose=1)
+
+                loss, acc = model.evaluate(X_test, y_test, verbose=0)
+                print("Test Accuracy =", acc)
