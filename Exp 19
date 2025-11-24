@@ -1,0 +1,46 @@
+import tensorflow as tf
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, concatenate
+from tensorflow.keras.models import Model
+import numpy as np
+
+# ------------------------------
+# Create Dummy Segmentation Data
+# ------------------------------
+X = np.random.rand(100, 128, 128, 1)
+y = np.random.randint(0, 2, (100, 128, 128, 1))  # binary mask
+
+# ------------------------------
+# U-Net Architecture Function
+# ------------------------------
+def unet(input_shape=(128,128,1)):
+    inputs = Input(input_shape)
+
+    # Encoder
+    c1 = Conv2D(16, (3,3), activation='relu', padding='same')(inputs)
+    p1 = MaxPooling2D((2,2))(c1)
+
+    c2 = Conv2D(32, (3,3), activation='relu', padding='same')(p1)
+    p2 = MaxPooling2D((2,2))(c2)
+
+    # Bottleneck
+    bn = Conv2D(64, (3,3), activation='relu', padding='same')(p2)
+
+    # Decoder
+    u1 = UpSampling2D((2,2))(bn)
+    m1 = concatenate([u1, c2])
+    c3 = Conv2D(32, (3,3), activation='relu', padding='same')(m1)
+
+    u2 = UpSampling2D((2,2))(c3)
+    m2 = concatenate([u2, c1])
+    c4 = Conv2D(16, (3,3), activation='relu', padding='same')(m2)
+
+    outputs = Conv2D(1, (1,1), activation='sigmoid')(c4)
+
+    model = Model(inputs, outputs)
+    return model
+
+model = unet()
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.summary()
+
+model.fit(X, y, epochs=5, batch_size=4, validation_split=0.1)
